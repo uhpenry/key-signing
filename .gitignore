@@ -1,0 +1,15 @@
+# Node & build
+node_modules/
+dist/
+
+# Private keys — never commit
+*.pem
+*.key
+*.private
+
+# Env vars
+.env
+
+# Ignore all private JSON key files
+*.private.json
+*.env
