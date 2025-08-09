@@ -1,38 +1,50 @@
-# SECURITY
+# Uhpenry Key Security Practices
 
-This document describes the security model, recommended storage, rotation and incident response for the Uhpenry key & signing utilities.
+## Private Key Storage
 
-> **Important:** This repository contains **no private keys**. Publishing code does not reduce safety if you follow the guidance below.
+- All private keys are stored securely.
+- Never store private keys in git or any public repository.
+- `.gitignore` is configured to prevent accidental commits of sensitive files.
+- Access to private keys is restricted to minimal necessary services and personnel.
 
-## Threat model (brief)
+## Key Generation and Algorithm
 
-- **We protect integrity** of transaction objects and license certificates by signing them with a private key.
-- **The private key is secret** — compromise of the private key allows forging licenses.
-- Public disclosure of the key _generation code_ is acceptable; secrecy must be limited to private keys.
+- Keys use Ed25519 curve for EdDSA signatures, chosen for its security, efficiency, and broad library support.
+- Keys are generated with the `extractable: true` flag only for controlled export during rotation or backup.
+- Key IDs (`kid`) include timestamps (format: `uhp-license-YYYYMMDD`) for traceability.
 
-## Recommendations (must-haves)
+## Rotation
 
-1. **Never commit private keys.** Use `.gitignore` + CI checks to prevent accidental commits.
-2. **Use a Key Management Service** (KMS/HSM) for production private keys (AWS KMS, GCP KMS, Azure Key Vault).
-3. **Rotate keys every 6 months** (recommended). Keep older public keys in `.well-known` for verification of old signatures. Do not delete public keys needed to verify still-valid transactions.
-4. **Retain public keys for at least 12 months** after rotation to allow verification of archived licenses.
-5. **Audit all signing operations.** Log who/what/time/kid for each signing action (audit log).
-6. **CI gate** pushes to the public repo and ensure no secrets are in repo history (use pre-commit and secret-scan).
-7. **Revoke compromised keys:** publish a revocation flag in `.well-known` and notify affected parties.
+- Keys are rotated on a strict 6-month schedule to limit exposure in case of compromise.
+- Old public keys remain accessible in `.well-known` for signature verification of previously issued licenses.
+- Rotation process is performed on a dedicated `rotate` branch to maintain clean audit trails.
+- After rotation, immediate deployment and publishing of new public keys occur to avoid service disruption.
 
-## Secure storage guidance
+## Verification
 
-- **Production:** Keep private keys in KMS and perform signing via KMS API (do not export raw key material). Store `kid` → KMS-reference mapping in an access-controlled store.
-- **Development:** Use local files only on dev machines. Protect with file permissions (`600`) and ensure `keys/private/` is gitignored.
-- **Backups:** If you must back up private keys, encrypt the backups and protect the encryption keys with KMS.
+- Public keys are hosted under `https://uhpenry.com/.well-known/uhp-{signer/integrity}-*.public.json` following JWKS standards.
+- License verification is fully offline-capable using the Ed25519 algorithm and the corresponding `kid`.
+- Clients should always use the `kid` in the license payload to select the correct key for verification.
+- Verification libraries in major languages (Node.js, Python, Go) are maintained and documented for interoperability.
 
-## When a key is compromised
+## Compromise Procedure
 
-1. Immediately mark key as revoked in `.well-known` and `current_kid` should reflect a safe key.
-2. Rotate to a new key pair (generate new `kid`).
-3. Re-issue any licenses that must be replaced.
-4. Publish incident summary and mitigation steps for affected parties.
+1. Mark the compromised key as `"revoked": true` in the `.well-known` JWKS file immediately.
+2. Issue an emergency key rotation with a new key pair.
+3. Notify all partners and affected users with clear guidance.
+4. Revoke any licenses signed by the compromised key if feasible.
+5. Conduct a root cause analysis and review security policies.
 
-## Reporting vulnerabilities
+## Additional Security Recommendations
 
-If you find a security issue, please contact: `security@uhpenry.com` (or [link to contact]).
+- Use HTTPS strictly for all key and license distribution endpoints.
+- Implement rate limiting and monitoring on key rotation APIs and endpoints.
+- Log all key generation and rotation activities with immutable audit trails.
+- Encourage clients to cache public keys securely and periodically refresh from `.well-known`.
+- Educate developers and partners about the importance of key security and proper verification procedures.
+
+## Disclaimer
+
+While this system is designed with strong security principles, no system can guarantee absolute security. Regular security reviews and improvements are part of our ongoing commitment.
+
+---
