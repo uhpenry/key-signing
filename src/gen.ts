@@ -1,9 +1,9 @@
-import { formatDate, generateAndSaveKeys, updateEnvFile } from './lib/keygen';
+import { formatDate } from './lib/helpers';
+import { generateAndSaveKeys, updateEnvFile } from './lib/keygen';
 
 const main = async (): Promise<void> => {
-    const dateString = formatDate();
-    
-    
+  const dateString = formatDate();
+
   const signerBaseName = `uhp-signer-${dateString}`;
   const integrityBaseName = `uhp-integrity-${dateString}`;
 
@@ -14,7 +14,10 @@ const main = async (): Promise<void> => {
   const integrityPrivateKey = await generateAndSaveKeys(integrityBaseName);
 
   // Write both private keys to .env as minified strings
-  await updateEnvFile({ UHPENRY_SIGNER_KEY: signerPrivateKey, UHPENRY_INTEGRITY_KEY: integrityPrivateKey });
+  await updateEnvFile({
+    UHPENRY_SIGNER_KEY: signerPrivateKey,
+    UHPENRY_INTEGRITY_KEY: integrityPrivateKey,
+  });
 };
 
 main().catch((err) => {

@@ -1,22 +1,10 @@
 import path from 'path';
 import * as jose from 'jose';
 import { promises as fs } from 'fs';
+import { Ed25519KeyType } from './types';
 
 const ENV_FILE_PATH = path.join(process.cwd(), '.env');
 const WELL_KNOWN_DIR = path.join(process.cwd(), './public/.well-known');
-
-/**
- * Formats the current date as a string in YYYYMMDD format.
- *
- * @returns {string} Current date formatted as 'YYYYMMDD'.
- */
-export const formatDate = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // 0-indexed months, so +1
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}${month}${day}`;
-};
 
 /**
  * Generates an Ed25519 key pair using the jose library.
@@ -24,13 +12,10 @@ export const formatDate = (): string => {
  *
  * @async
  * @function generateEd25519Key
- * @returns {Promise<{publicJwk: jose.JWK, privateJwk: jose.JWK}>}
+ * @returns {Promise<Ed25519KeyType>}
  *   Resolves with the public and private keys exported as JWK objects.
  */
-const generateEd25519Key = async (): Promise<{
-  publicJwk: jose.JWK;
-  privateJwk: jose.JWK;
-}> => {
+export const generateEd25519Key = async (): Promise<Ed25519KeyType> => {
   // Generate EdDSA key pair with extractable keys
   const { publicKey, privateKey } = await jose.generateKeyPair('EdDSA', {
     extractable: true,
@@ -40,9 +25,10 @@ const generateEd25519Key = async (): Promise<{
   const publicJwk = await jose.exportJWK(publicKey);
   const privateJwk = await jose.exportJWK(privateKey);
 
-  // Optionally add algorithm and usage metadata for clarity
+  // Algorithm and usage metadata for clarity
   publicJwk.alg = 'EdDSA';
   publicJwk.use = 'sig';
+
   privateJwk.alg = 'EdDSA';
   privateJwk.use = 'sig';
 
@@ -72,7 +58,7 @@ export const updateEnvFile = async (vars: Record<string, string>) => {
   }
 
   await fs.writeFile(ENV_FILE_PATH, lines.join('\n') + '\n', 'utf8');
-  console.log(`✅ .env file updated at ${ENV_FILE_PATH}`);
+  console.log(`.env file updated at ${ENV_FILE_PATH}`);
 };
 
 /**
@@ -100,7 +86,7 @@ export const generateAndSaveKeys = async (name: string): Promise<string> => {
     JSON.stringify({ keys: [publicJwk] }, null, 2),
     'utf8'
   );
-  console.log(`✅ Public key saved to ${publicKeyPath}`);
+  console.log(`Public key saved to ${publicKeyPath}`);
 
   // Write the private key file (do NOT commit this)
   const privateKeyPath = path.join(process.cwd(), `${name}.private.json`);
@@ -109,7 +95,7 @@ export const generateAndSaveKeys = async (name: string): Promise<string> => {
     JSON.stringify(privateJwk, null, 2),
     'utf8'
   );
-  console.log(`🔒 Private key saved to ${privateKeyPath} (keep this secret!)`);
+  console.log(`Private key saved to ${privateKeyPath} (keep this secret!)`);
 
   // Return minified private key JSON string for env
   return JSON.stringify(privateJwk);
