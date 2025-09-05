@@ -81,11 +81,7 @@ export const generateAndSaveKeys = async (name: string): Promise<string> => {
 
   // Write the public key file with "keys" array wrapper for JWKS standard
   const publicKeyPath = path.join(WELL_KNOWN_DIR, `${name}.public.json`);
-  await fs.writeFile(
-    publicKeyPath,
-    JSON.stringify({ keys: [publicJwk] }, null, 2),
-    'utf8'
-  );
+  await fs.writeFile(publicKeyPath, JSON.stringify(publicJwk, null, 2), 'utf8');
   console.log(`Public key saved to ${publicKeyPath}`);
 
   // Write the private key file (do NOT commit this)
