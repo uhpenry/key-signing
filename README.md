@@ -47,7 +47,3 @@ This removes any hidden “black box” concerns and ensures users and partners 
 - `public/.well-known/uhp-{signer/integrity}-*.public.json` – The published public key list
 - `examples/` – Show how verification works in Node, Python, Go
 - `docs/` – Security notes
-
-## Important
-
-This code is for transparency. It is **not a public API** and is not supported for production use outside Uhpenry.
